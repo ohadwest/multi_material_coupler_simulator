@@ -339,38 +339,40 @@ if run_btn or 'sim_results' in st.session_state:
         plt.close(fig_obj)
 
 else:
-    # --- AUTOMATIC GIF / CAROUSEL PREVIEW (BEFORE RUNNING SIMULATION) ---
-    st.info("👈 Choose core material, set parameters in the sidebar, and click **Run Simulation**!")
-    st.markdown("### 🌟 Expected Output Sample Gallery (Auto-looping Preview)")
+    # --- REFERENCE MODAL DISTRIBUTIONS & BENCHMARK PREVIEW ---
+    st.info("👈 Select core material and physical geometry in the sidebar, then click **Run Simulation** 🚀")
+    
+    st.markdown("### 🔬 Reference Modal Profiles & Numerical Benchmarks 🎨")
+    st.markdown("Below are standard reference solutions calculated for a symmetric dual-waveguide directional coupler structure:")
 
     preview_items = [
-        {"file": "index_profile.png", "title": "Input - Refractive Index Profile"},
-        {"file": "even_mode.png", "title": "Output 1 - Symmetric (Even) Mode Profile"},
-        {"file": "odd_mode.png", "title": "Output 2 - Antisymmetric (Odd) Mode Profile"},
-        {"file": "1d_profiles.png", "title": "Output 3 - 1D Field Profiles at Core Center"},
-        {"file": "dispersion.png", "title": "Output 4 - Mode Even & Odd Dispersion Curve"},
-        {"file": "ring_loss_QL.png", "title": "Output 5 - Ring Coupling vs Loss & Critical Q_L"}
+        {"file": "index_profile.png", "title": "1. Cross-Sectional Refractive Index Distribution n(x,y) 📐"},
+        {"file": "even_mode.png", "title": "2. Symmetric Supermode Field Distribution (Quasi-TE Even) ⚡"},
+        {"file": "odd_mode.png", "title": "3. Antisymmetric Supermode Field Distribution (Quasi-TE Odd) 🌊"},
+        {"file": "1d_profiles.png", "title": "4. 1D Transverse Field Profiles at Core Center Cutline 📊"},
+        {"file": "dispersion.png", "title": "5. Supermode Dispersion Characteristics n_eff(λ) 📈"},
+        {"file": "ring_loss_QL.png", "title": "6. Power Coupling & Cavity Quality Factor Q_L vs. Loss 🎯"}
     ]
     
     valid_items = [item for item in preview_items if os.path.exists(item["file"])]
     
     if valid_items:
-        # Build pure HTML/CSS Auto Carousel with Fade Animation
+        # Pure HTML/CSS Carousel for Dynamic Reference Display
         encoded_slides = []
         for idx, item in enumerate(valid_items):
             with open(item["file"], "rb") as img_f:
                 b64 = base64.b64encode(img_f.read()).decode()
             encoded_slides.append(f"""
                 <div class="mySlides fade" style="display: {'block' if idx==0 else 'none'}; text-align: center;">
-                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px; color: #1E3A8A;">
-                        [{idx+1}/{len(valid_items)}] {item['title']}
+                    <div style="font-weight: 600; font-size: 15px; margin-bottom: 10px; color: #0F172A; font-family: sans-serif;">
+                        {item['title']}
                     </div>
-                    <img src="data:image/png;base64,{b64}" style="max-width: 85%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    <img src="data:image/png;base64,{b64}" style="max-width: 82%; height: auto; border-radius: 8px; border: 1px solid #CBD5E1; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
                 </div>
             """)
 
         carousel_html = f"""
-        <div id="slideshow-container" style="max-width: 750px; position: relative; margin: auto; padding: 15px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0;">
+        <div id="slideshow-container" style="max-width: 760px; position: relative; margin: 10px auto; padding: 18px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0;">
             {''.join(encoded_slides)}
         </div>
         <script>
@@ -387,8 +389,8 @@ else:
                 if (slides[slideIndex-1]) {{
                     slides[slideIndex-1].style.display = "block";  
                 }}
-                setTimeout(showSlides, 2500); // Switch image every 2.5 seconds
+                setTimeout(showSlides, 3000); // Switch every 3.0 seconds
             }}
         </script>
         """
-        st.components.v1.html(carousel_html, height=480)
+        st.components.v1.html(carousel_html, height=490)
