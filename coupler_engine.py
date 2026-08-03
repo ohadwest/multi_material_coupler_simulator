@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.linalg as spla
 
-# --- REFRACTIVE INDEX FUNCTIONS FOR CORE MATERIALS ---
+# --- REFRACTIVE INDEX FUNCTIONS ---
 
 def sellmeier_sio2(lam_um):
     """Cladding: Thermal SiO2 Sellmeier"""
@@ -145,7 +145,7 @@ def svmodes_2d(lam_um, guess, nmodes, dx, dy, eps_mesh, polarization='ex'):
         
     return phi_modes, neff_vals
 
-def run_simulation(w_single, h_core, gap, coupler_L, ring_R, lambda_start, lambda_end, n_lambda, polarization, res_mode, top_oxide, bottom_oxide=4.0, core_material="Si3N4 (Stoichiometric)"):
+def run_simulation(w_single, h_core, gap, coupler_L, ring_R, lambda_start, lambda_end, n_lambda, polarization, res_mode, top_oxide, bottom_oxide=4.0, core_material="Si3N4 (Stoichiometric)", progress_callback=None):
     dx = dy = 0.005 if "hr" in res_mode else (0.01 if "mr" in res_mode else 0.02)
     top_clad_mode = 'air' if top_oxide <= 0 else 'thin_silica'
     side = 2.0
@@ -162,6 +162,10 @@ def run_simulation(w_single, h_core, gap, coupler_L, ring_R, lambda_start, lambd
     idx_center = n_lambda // 2
     
     for i in range(n_lambda):
+        # Progress callback to update progress bar in Streamlit
+        if progress_callback:
+            progress_callback(i + 1, n_lambda)
+            
         current_lambda = lambda_vec[i]
         k0 = 2.0 * np.pi / current_lambda
         
