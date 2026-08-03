@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import io
+import time
+import os
+from PIL import Image
 from coupler_engine import run_simulation
 
 from reportlab.lib.pagesizes import letter
@@ -11,14 +14,15 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
 st.set_page_config(
-    page_title="Multi-Material Coupler Dashboard",
+    page_title="Photonic Coupler Solver (Si / Si3N4 / Al2O3 / SiO2)",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("⚡ Multi-Material Directional & Ring Coupler Solver")
-st.markdown("### Integrated Photonics Mode Solver & Coupling Analysis")
+# --- UPDATED TITLE ---
+st.title("⚡ Photonic Directional & Ring Coupler Solver")
+st.markdown("### Integrated Optics Mode Solver & Coupling Analysis (`Si / Si3N4 / Al2O3 / SiO2`)")
 
 # --- SIDEBAR CONTROLS ---
 st.sidebar.header("🧪 Material Selection")
@@ -151,31 +155,44 @@ def generate_pdf_report(d, fig_dict):
 # --- EXECUTION & DISPLAY ---
 if run_btn or 'sim_results' in st.session_state:
     if run_btn:
-        with st.spinner("Calculating modes and optical coupling... Please wait."):
-            results = run_simulation(
-                w_single, h_core, gap, coupler_L, ring_R,
-                lambda_start, lambda_end, n_lambda, polarization, res_mode, top_oxide, bottom_oxide,
-                core_material
-            )
-            
-            alpha_db_vals = np.array(custom_losses)
-            alpha_cm = alpha_db_vals * (np.log(10) / 10.0)
-            L_ring_cm = results['L_ring_um'] * 1e-4
-            round_trip_loss_pct = (1.0 - np.exp(-alpha_cm * L_ring_cm)) * 100.0
-            
-            neff_avg_vec = (results['neff_even'] + results['neff_odd']) / 2.0
-            lambda_cm_center = results['lambda_center_val'] * 1e-4
-            dneff_dlambda = (neff_avg_vec[-1] - neff_avg_vec[0]) / ((results['lambda_vec'][-1] - results['lambda_vec'][0]) * 1e-4)
-            n_group = neff_avg_vec[results['idx_center']] - lambda_cm_center * dneff_dlambda
-            
-            Q0_vals = (2.0 * np.pi * n_group) / (lambda_cm_center * alpha_cm)
-            QL_vals = Q0_vals / 2.0
-            
-            results['alpha_db_vals'] = alpha_db_vals
-            results['round_trip_loss_pct'] = round_trip_loss_pct
-            results['QL_vals'] = QL_vals
-            
-            st.session_state['sim_results'] = results
+        # Progress Bar & Counter Setup
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        
+        def update_progress(current, total):
+            pct = int((current / total) * 100)
+            progress_bar.progress(pct)
+            status_text.markdown(f"⏳ **Calculating Wavelength {current} of {total} ({pct}%)...**")
+
+        results = run_simulation(
+            w_single, h_core, gap, coupler_L, ring_R,
+            lambda_start, lambda_end, n_lambda, polarization, res_mode, top_oxide, bottom_oxide,
+            core_material, progress_callback=update_progress
+        )
+        
+        status_text.success("✅ Simulation completed successfully!")
+        time.sleep(0.5)
+        status_text.empty()
+        progress_bar.empty()
+        
+        alpha_db_vals = np.array(custom_losses)
+        alpha_cm = alpha_db_vals * (np.log(10) / 10.0)
+        L_ring_cm = results['L_ring_um'] * 1e-4
+        round_trip_loss_pct = (1.0 - np.exp(-alpha_cm * L_ring_cm)) * 100.0
+        
+        neff_avg_vec = (results['neff_even'] + results['neff_odd']) / 2.0
+        lambda_cm_center = results['lambda_center_val'] * 1e-4
+        dneff_dlambda = (neff_avg_vec[-1] - neff_avg_vec[0]) / ((results['lambda_vec'][-1] - results['lambda_vec'][0]) * 1e-4)
+        n_group = neff_avg_vec[results['idx_center']] - lambda_cm_center * dneff_dlambda
+        
+        Q0_vals = (2.0 * np.pi * n_group) / (lambda_cm_center * alpha_cm)
+        QL_vals = Q0_vals / 2.0
+        
+        results['alpha_db_vals'] = alpha_db_vals
+        results['round_trip_loss_pct'] = round_trip_loss_pct
+        results['QL_vals'] = QL_vals
+        
+        st.session_state['sim_results'] = results
 
     d = st.session_state['sim_results']
 
@@ -323,4 +340,33 @@ if run_btn or 'sim_results' in st.session_state:
         plt.close(fig_obj)
 
 else:
-    st.info("👈 Choose core material, set your parameters in the sidebar, and click **Run Simulation**!")
+    # --- WELCOME PREVIEW CAROUSEL (BEFORE SIMULATION) ---
+    st.info("👈 Choose core material, set parameters in the sidebar, and click **Run Simulation**!")
+    st.markdown("### 🌟 Expected Output Sample Gallery")
+
+    preview_images = [
+        {"file": "index_profile.png", "title": "Refractive Index Profile"},
+        {"file": "even_mode.png", "title": "Symmetric (Even) Mode Profile"},
+        {"file": "odd_mode.png", "title": "Antisymmetric (Odd) Mode Profile"},
+        {"file": "1d_profiles.png", "title": "1D Cross-Section Field Distribution"}
+    ]
+    
+    existing_previews = [img for img in preview_images if os.path.exists(img["file"])]
+    
+    if existing_previews:
+        if 'gallery_idx' not in st.session_state:
+            st.session_state['gallery_idx'] = 0
+
+        col_prev, col_img, col_next = st.columns([1, 8, 1])
+        
+        with col_prev:
+            if st.button("⬅️ Prev", key="btn_prev"):
+                st.session_state['gallery_idx'] = (st.session_state['gallery_idx'] - 1) % len(existing_previews)
+                
+        with col_next:
+            if st.button("Next ➡️", key="btn_next"):
+                st.session_state['gallery_idx'] = (st.session_state['gallery_idx'] + 1) % len(existing_previews)
+                
+        curr = existing_previews[st.session_state['gallery_idx']]
+        with col_img:
+            st.image(curr["file"], caption=f"Preview {st.session_state['gallery_idx'] + 1}/{len(existing_previews)}: {curr['title']}", use_column_width=True)
