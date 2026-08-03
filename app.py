@@ -5,7 +5,7 @@ import pandas as pd
 import io
 import time
 import os
-from PIL import Image
+import base64
 from coupler_engine import run_simulation
 
 from reportlab.lib.pagesizes import letter
@@ -155,7 +155,6 @@ def generate_pdf_report(d, fig_dict):
 # --- EXECUTION & DISPLAY ---
 if run_btn or 'sim_results' in st.session_state:
     if run_btn:
-        # Progress Bar & Counter Setup
         progress_bar = st.progress(0)
         status_text = st.empty()
         
@@ -340,33 +339,56 @@ if run_btn or 'sim_results' in st.session_state:
         plt.close(fig_obj)
 
 else:
-    # --- WELCOME PREVIEW CAROUSEL (BEFORE SIMULATION) ---
+    # --- AUTOMATIC GIF / CAROUSEL PREVIEW (BEFORE RUNNING SIMULATION) ---
     st.info("👈 Choose core material, set parameters in the sidebar, and click **Run Simulation**!")
-    st.markdown("### 🌟 Expected Output Sample Gallery")
+    st.markdown("### 🌟 Expected Output Sample Gallery (Auto-looping Preview)")
 
-    preview_images = [
-        {"file": "index_profile.png", "title": "Refractive Index Profile"},
-        {"file": "even_mode.png", "title": "Symmetric (Even) Mode Profile"},
-        {"file": "odd_mode.png", "title": "Antisymmetric (Odd) Mode Profile"},
-        {"file": "1d_profiles.png", "title": "1D Cross-Section Field Distribution"}
+    preview_items = [
+        {"file": "index_profile.png", "title": "Input - Refractive Index Profile"},
+        {"file": "even_mode.png", "title": "Output 1 - Symmetric (Even) Mode Profile"},
+        {"file": "odd_mode.png", "title": "Output 2 - Antisymmetric (Odd) Mode Profile"},
+        {"file": "1d_profiles.png", "title": "Output 3 - 1D Field Profiles at Core Center"},
+        {"file": "dispersion.png", "title": "Output 4 - Mode Even & Odd Dispersion Curve"},
+        {"file": "ring_loss_QL.png", "title": "Output 5 - Ring Coupling vs Loss & Critical Q_L"}
     ]
     
-    existing_previews = [img for img in preview_images if os.path.exists(img["file"])]
+    valid_items = [item for item in preview_items if os.path.exists(item["file"])]
     
-    if existing_previews:
-        if 'gallery_idx' not in st.session_state:
-            st.session_state['gallery_idx'] = 0
+    if valid_items:
+        # Build pure HTML/CSS Auto Carousel with Fade Animation
+        encoded_slides = []
+        for idx, item in enumerate(valid_items):
+            with open(item["file"], "rb") as img_f:
+                b64 = base64.b64encode(img_f.read()).decode()
+            encoded_slides.append(f"""
+                <div class="mySlides fade" style="display: {'block' if idx==0 else 'none'}; text-align: center;">
+                    <div style="font-weight: bold; font-size: 16px; margin-bottom: 8px; color: #1E3A8A;">
+                        [{idx+1}/{len(valid_items)}] {item['title']}
+                    </div>
+                    <img src="data:image/png;base64,{b64}" style="max-width: 85%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                </div>
+            """)
 
-        col_prev, col_img, col_next = st.columns([1, 8, 1])
-        
-        with col_prev:
-            if st.button("⬅️ Prev", key="btn_prev"):
-                st.session_state['gallery_idx'] = (st.session_state['gallery_idx'] - 1) % len(existing_previews)
-                
-        with col_next:
-            if st.button("Next ➡️", key="btn_next"):
-                st.session_state['gallery_idx'] = (st.session_state['gallery_idx'] + 1) % len(existing_previews)
-                
-        curr = existing_previews[st.session_state['gallery_idx']]
-        with col_img:
-            st.image(curr["file"], caption=f"Preview {st.session_state['gallery_idx'] + 1}/{len(existing_previews)}: {curr['title']}", use_column_width=True)
+        carousel_html = f"""
+        <div id="slideshow-container" style="max-width: 750px; position: relative; margin: auto; padding: 15px; background: #F8FAFC; border-radius: 12px; border: 1px solid #E2E8F0;">
+            {''.join(encoded_slides)}
+        </div>
+        <script>
+            let slideIndex = 0;
+            showSlides();
+            function showSlides() {{
+                let i;
+                let slides = document.getElementsByClassName("mySlides");
+                for (i = 0; i < slides.length; i++) {{
+                    slides[i].style.display = "none";  
+                }}
+                slideIndex++;
+                if (slideIndex > slides.length) {{slideIndex = 1}}    
+                if (slides[slideIndex-1]) {{
+                    slides[slideIndex-1].style.display = "block";  
+                }}
+                setTimeout(showSlides, 2500); // Switch image every 2.5 seconds
+            }}
+        </script>
+        """
+        st.components.v1.html(carousel_html, height=480)
