@@ -1,12 +1,4 @@
-**בטח, לחלוטין!**
 
-הסיבה שהמשוואות לא הוצגו קודם לכן היא שבתוך בלוק קוד (Code Block) ב-Markdown, ה-LaTeX מופיע כטקסט פשוט ולא מרונדר למשוואות מתמטיות.
-
-הנה קובץ ה-**`README.md`** המעודכן, שבו העברתי את כל המשוואות (מודלי החומרים + משוואות החישוב של המודים והצימוד) אל מחוץ לבלוק הקוד. כעת ה-LaTeX ירונדר בצורה מתמטית מושלמת ויפה ב-GitHub!
-
----
-
-העתק את כל התוכן הבא והדבק ב-**`README.md`**:
 
 # ⚡ Photonic Directional & Ring Coupler Solver
 
@@ -154,6 +146,4 @@ streamlit run app.py
 
 ---
 
-## 📄 License
 
-This project is open-source under the [MIT License](https://www.google.com/search?q=LICENSE).
