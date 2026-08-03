@@ -13,6 +13,27 @@ from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, Tabl
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib import colors
 
+import streamlit.components.v1 as components
+
+# --- GOOGLE ANALYTICS TRACKING ---
+def inject_google_analytics(measurement_id):
+    ga_code = f"""
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id={measurement_id}"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){{dataLayer.push(arguments);}}
+      gtag('js', new Date());
+      gtag('config', '{measurement_id}');
+    </script>
+    """
+    components.html(ga_code, height=0, width=0)
+
+# הפעלת קוד המעקב עם הקוד המזהה שלך
+inject_google_analytics("G-7776KX662W")
+
+
+
 st.set_page_config(
     page_title="Photonic Coupler Solver (Si / Si3N4 / Al2O3 / SiO2)",
     page_icon="⚡",
